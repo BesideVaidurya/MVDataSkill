@@ -1,3 +1,8 @@
+---
+name: mvdataskill
+description: Batch-run MATLAB multi-view clustering comparison algorithms with unified multi-view data loading/preprocessing, dataset-specific hyperparameter handling from Demo.m, built-in ACC/NMI/Purity/F-score/ARI metrics, runtime measurement, and result saving under result/. Use when adapting MATLAB multi-view clustering algorithms or experiment scripts to run multiple datasets consistently.
+---
+
 # MVDataSkill
 
 Use this project-local MATLAB skill when running multi-view clustering comparison algorithms in this workspace.

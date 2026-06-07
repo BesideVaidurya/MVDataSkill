@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="#english">English</a> | <a href="#中文">中文</a>
+  <a href="#english">English</a> | <a href="#chinese">中文</a>
 </p>
 
 ## Table of Contents
@@ -14,12 +14,14 @@
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Repository Structure](#repository-structure)
+- [Install as a Codex Skill](#install-as-a-codex-skill)
+- [Use the Skill in Codex](#use-the-skill-in-codex)
 - [Quick Start](#quick-start)
 - [Dataset-Specific Hyperparameters](#dataset-specific-hyperparameters)
 - [Built-in Evaluation Metrics](#built-in-evaluation-metrics)
 - [Runtime Measurement](#runtime-measurement)
 - [Output Files](#output-files)
-- [Chinese](#中文)
+- [Chinese / 中文](#chinese)
 
 ---
 
@@ -67,6 +69,48 @@ MVDataSkill/
         ├── Demo_Template_for_Algorithm.m
         └── Demo_JSMC_with_MVDataSkill.m
 ```
+
+## Install as a Codex Skill
+
+Assume you are in the repository root.
+
+### Codex
+
+Copy the skill folder into `$CODEX_HOME/skills/mvdataskill/`.
+
+For macOS, Linux, or Git Bash:
+
+```bash
+mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills/mvdataskill"
+cp -R MVDataSkill/. "${CODEX_HOME:-$HOME/.codex}/skills/mvdataskill/"
+```
+
+For Windows PowerShell:
+
+```powershell
+$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
+$skillDir = Join-Path $codexHome "skills\mvdataskill"
+New-Item -ItemType Directory -Force -Path $skillDir | Out-Null
+Copy-Item -Recurse -Force ".\MVDataSkill\*" $skillDir
+```
+
+Restart Codex after installation so the new skill can be discovered.
+
+## Use the Skill in Codex
+
+After installation, mention the skill in your Codex request:
+
+```text
+Use $mvdataskill to modify this MATLAB clustering algorithm so it can batch-run multi-view datasets and save ACC/NMI/Purity/ARI results.
+```
+
+Another example:
+
+```text
+Use $mvdataskill to wrap this algorithm's Demo.m with unified preprocessing, dataset-specific hyperparameters, runtime recording, and result saving.
+```
+
+Codex will read the skill instructions from `MVDataSkill/SKILL.md` and use the MATLAB helper functions in this repository to adapt comparison algorithms.
 
 ## Quick Start
 
@@ -188,6 +232,8 @@ result/
 
 ---
 
+<a id="chinese"></a>
+
 ## 中文
 
 **MVDataSkill** 是一个用于多视图聚类对比实验的 MATLAB 工具包。它把数据批量读取、多视图数据预处理、数据集超参数匹配、重复运行、评价指标计算、运行时间统计和结果保存统一封装起来，方便在不同对比算法之间复用。
@@ -206,6 +252,44 @@ result/
 - 自动保存每个数据集结果和总汇总结果到 `result/` 文件夹。
 
 ### 快速使用
+
+### 在 Codex 中安装 Skill
+
+假设当前路径是仓库根目录。
+
+如果你使用 macOS、Linux 或 Git Bash：
+
+```bash
+mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills/mvdataskill"
+cp -R MVDataSkill/. "${CODEX_HOME:-$HOME/.codex}/skills/mvdataskill/"
+```
+
+如果你使用 Windows PowerShell：
+
+```powershell
+$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
+$skillDir = Join-Path $codexHome "skills\mvdataskill"
+New-Item -ItemType Directory -Force -Path $skillDir | Out-Null
+Copy-Item -Recurse -Force ".\MVDataSkill\*" $skillDir
+```
+
+安装完成后，重启 Codex，让 Codex 自动发现这个 skill。
+
+### 在 Codex 中使用
+
+安装后，可以在 Codex 对话中直接这样调用：
+
+```text
+Use $mvdataskill to modify this MATLAB clustering algorithm so it can batch-run multi-view datasets and save ACC/NMI/Purity/ARI results.
+```
+
+也可以这样描述具体任务：
+
+```text
+Use $mvdataskill to wrap this algorithm's Demo.m with unified preprocessing, dataset-specific hyperparameters, runtime recording, and result saving.
+```
+
+Codex 会读取 `MVDataSkill/SKILL.md` 中的说明，并调用本仓库中的 MATLAB 工具函数来改造其它多视图聚类对比算法。
 
 ```matlab
 addpath(genpath('path/to/MVDataSkill/MVDataSkill'));
