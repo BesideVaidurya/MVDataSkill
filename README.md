@@ -38,12 +38,14 @@ The toolkit is designed for research workflows where different comparison algori
 - Batch runs multiple `.mat` datasets with one configuration file.
 - Supports multi-view data stored as `X`, `data`, `fea`, or `features`.
 - Supports common label fields such as `Y`, `y`, `gt`, `gnd`, `label`, `labels`, and `truth`.
+- Maps loaded ground-truth labels to compact `1..K` labels by default, so datasets whose labels start at `0` can be used by algorithms that index by class label.
 - Preserves final accuracy by default: no normalization or invalid-value replacement is applied unless explicitly enabled.
 - Supports both `d x n` and `n x d` view formats.
 - Parses dataset-specific hyperparameters from original MATLAB demo scripts.
 - Falls back to paper/default hyperparameters when a dataset has no specific setting.
 - Includes built-in evaluation metrics, so algorithms do not need their own metric files.
 - Records runtime with `tic` before the algorithm runner and `toc` immediately after labels are returned.
+- Records optional iteration counts when the runner returns them as a second output or inside an `extra` struct field such as `iter`, `iteration`, `iterNum`, or `numIter`.
 - Saves per-dataset and all-dataset summary results to `result/`.
 
 ## Repository Structure
@@ -138,6 +140,7 @@ cfg.dataList = {
 
 cfg.repNum = 10;
 cfg.outputFormat = 'd_by_n';
+cfg.relabelGroundTruth = true; % Map labels such as 0..K-1 to 1..K.
 
 % Keep these disabled unless the original algorithm demo does the same.
 cfg.replaceInvalid = false;
@@ -215,6 +218,7 @@ Time = toc;
 ```
 
 Metric computation happens after `toc`, so `time_mean` and `time_std` reflect algorithm runtime rather than evaluation time.
+If the runner returns iteration information, `iteration_mean` and `iteration_std` are saved beside the time columns.
 
 ## Output Files
 

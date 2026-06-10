@@ -1,5 +1,10 @@
 function [X, info] = mvskill_preprocess_views(rawX, gt, cfg)
-%MVSKILL_PREPROCESS_VIEWS Convert views to a consistent orientation.
+%MVSKILL_PREPROCESS_VIEWS Validate and optionally normalize multi-view data.
+%
+% Default convention:
+%   output X{v}: d_i x n
+%   output gt:   n x 1
+% Raw n x d_i views are transposed to d_i x n when cfg.autoTranspose is true.
 
 defaultCfg = mvskill_default_config();
 if nargin < 3 || isempty(cfg)
@@ -11,11 +16,13 @@ if ~iscell(rawX)
     rawX = {rawX};
 end
 
+gt = double(gt(:));
 sampleNum = length(gt);
 viewNum = numel(rawX);
 X = cell(1, viewNum);
 viewSizeBefore = cell(1, viewNum);
 viewSizeAfter = cell(1, viewNum);
+viewTransposed = false(1, viewNum);
 
 outputFormat = 'd_by_n';
 if isfield(cfg, 'outputFormat') && ~isempty(cfg.outputFormat)
@@ -50,20 +57,26 @@ for iv = 1:viewNum
     if is_d_by_n(outputFormat)
         if size(Xi, 2) == sampleNum
             % already d x n
-        elseif size(Xi, 1) == sampleNum
+        elseif isfield(cfg, 'autoTranspose') && cfg.autoTranspose && size(Xi, 1) == sampleNum
             Xi = Xi';
+            viewTransposed(iv) = true;
         else
-            error('View %d has inconsistent sample number. size = [%d, %d], labels = %d.', ...
-                iv, size(Xi, 1), size(Xi, 2), sampleNum);
+            error(['View %d must be d_i x n, with n equal to length(gt). ', ...
+                'size(X{%d}) = [%d, %d], length(gt) = %d. ', ...
+                'If this dataset is n x d_i, keep cfg.autoTranspose = true.'], ...
+                iv, iv, size(Xi, 1), size(Xi, 2), sampleNum);
         end
     elseif is_n_by_d(outputFormat)
         if size(Xi, 1) == sampleNum
             % already n x d
-        elseif size(Xi, 2) == sampleNum
+        elseif isfield(cfg, 'autoTranspose') && cfg.autoTranspose && size(Xi, 2) == sampleNum
             Xi = Xi';
+            viewTransposed(iv) = true;
         else
-            error('View %d has inconsistent sample number. size = [%d, %d], labels = %d.', ...
-                iv, size(Xi, 1), size(Xi, 2), sampleNum);
+            error(['View %d must be n x d_i when cfg.outputFormat is n_by_d. ', ...
+                'size(X{%d}) = [%d, %d], length(gt) = %d. ', ...
+                'If this dataset is d_i x n, keep cfg.autoTranspose = true.'], ...
+                iv, iv, size(Xi, 1), size(Xi, 2), sampleNum);
         end
     else
         error('Unknown cfg.outputFormat: %s. Use d_by_n or n_by_d.', outputFormat);
@@ -84,6 +97,7 @@ info.classNum = length(unique(gt));
 info.outputFormat = outputFormat;
 info.viewSizeBefore = viewSizeBefore;
 info.viewSizeAfter = viewSizeAfter;
+info.viewTransposed = viewTransposed;
 end
 
 function tf = is_d_by_n(fmt)

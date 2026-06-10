@@ -1,16 +1,17 @@
 # MVDataSkill
 
 `MVDataSkill` is a reusable MATLAB toolkit for multi-view clustering comparison experiments.
-It centralizes dataset loading, multi-view preprocessing, metric evaluation, repeated runs, and result saving.
+It centralizes dataset loading, multi-view preprocessing, metric evaluation, label-based mean/std statistics, and result saving.
 
 ## What It Does
 
 - Loads `.mat` datasets and automatically finds feature variables: `X`, `data`, `fea`, or `features`.
 - Loads labels from common fields: `Y`, `y`, `gt`, `gnd`, `truelabel`, `label`, `labels`, or `truth`.
-- Converts every view to a fixed orientation, default `d x n` where columns are samples.
+- Maps loaded ground-truth labels to compact `1..K` labels by default, so datasets whose labels start at `0` can still be used by MATLAB code that indexes by class label. The original labels and mapping are saved in result `.mat` files.
+- Converts every view to a fixed final orientation, default `d x n` where columns are samples. Raw `n x d` views are transposed automatically when `cfg.autoTranspose = true`.
 - Converts sparse/logical data to `double`; `NaN/Inf` replacement and normalization are only done when explicitly enabled.
 - Calls the built-in metric files in `E:\coding\papper\sub\MVDataSkill\metrics`, so algorithms do not need to carry their own ACC/NMI/F-score files.
-- Saves per-dataset `.txt`, `.xlsx`, `.mat` files and an all-dataset summary.
+- Saves per-dataset `.txt`, `.xlsx`, `.mat` files and an all-dataset summary, including runtime and optional iteration count columns.
 
 ## Quick Use
 
@@ -24,8 +25,10 @@ cfg.dataPath = fullfile(cfg.algorithmRoot, 'datasets');
 cfg.resultRoot = fullfile(cfg.algorithmRoot, 'result');
 
 cfg.dataList = {'ORL.mat', 'Yale.mat', 'BBCSport.mat'};
-cfg.repNum = 10;
+cfg.repNum = 10;          % Number of returned label vectors expected for mean/std.
 cfg.outputFormat = 'd_by_n';
+cfg.autoTranspose = true; % Raw n x d_i views are converted to final d_i x n.
+cfg.relabelGroundTruth = true; % Map labels such as 0..K-1 to 1..K.
 cfg.replaceInvalid = false;
 cfg.normalize = false;
 % Optional: set these only when you want to match the original Demo.m exactly.
@@ -96,7 +99,27 @@ cfg.runner = @(X, K, info) myAlgorithm(X, K, info.sampleNum);
 cfg.runner = @(X, K, info, repIdx, cfg) myAlgorithm(X, K, cfg.params.alpha);
 ```
 
-The runner must return one label vector whose length equals the number of samples.
+The runner is called once per dataset. It can return one label vector or multiple label vectors produced after that algorithm run. Supported label output formats are:
+
+```matlab
+label          % n x 1 or 1 x n
+labelMatrix    % n x r or r x n, where r is the number of label outputs
+labelCell      % 1 x r or r x 1 cell array, each cell is one n-sample label vector
+```
+
+`mvskill_run_batch` computes metrics for each returned label vector, then reports metric `mean/std` over those label vectors. It does not repeatedly run the complete algorithm just to compute standard deviation.
+
+If the algorithm exposes its iteration count, return it as the runner's second output:
+
+```matlab
+cfg.runner = @runnerWithIter;
+
+function [label, iterNum] = runnerWithIter(X, K, info, repIdx, cfg)
+    [label, iterNum] = runYourAlgorithm(...);
+end
+```
+
+or return a struct whose field is one of `iter`, `iteration`, `iterNum`, `numIter`, etc. `mvskill_run_batch` records this in `iteration_mean` and `iteration_std`.
 
 ## Output Orientation
 
@@ -104,6 +127,7 @@ Use this for algorithms like JSMC/CMSR that compute `size(X{1}, 2)` as sample nu
 
 ```matlab
 cfg.outputFormat = 'd_by_n';
+cfg.autoTranspose = true;
 ```
 
 Use this for algorithms that expect rows as samples:
@@ -136,6 +160,7 @@ Time = toc;
 ```
 
 Metric computation happens after `toc`, so `time_mean` and `time_std` record algorithm runtime, not evaluation time.
+If the runner returns iteration information, `iteration_mean` and `iteration_std` are saved beside the time columns.
 
 ## Example
 

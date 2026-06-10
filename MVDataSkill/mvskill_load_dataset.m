@@ -71,12 +71,46 @@ if iscell(gt)
     gt = gt{1};
 end
 gt = double(gt(:));
+if any(~isfinite(gt))
+    error('Labels in %s contain NaN/Inf values.', dataFile);
+end
+
+originalGt = gt;
+if ~isfield(cfg, 'relabelGroundTruth') || cfg.relabelGroundTruth
+    [gt, labelMap] = relabel_to_one_based(gt);
+else
+    labelMap = build_identity_label_map(gt);
+end
 
 data = struct();
 data.name = datasetName;
 data.file = dataFile;
 data.raw = S;
 data.rawX = tempX;
+data.originalGt = originalGt;
 data.gt = gt;
+data.labelMap = labelMap;
 data.classNum = length(unique(gt));
+end
+
+function [label, labelMap] = relabel_to_one_based(label)
+u = unique(label);
+mapped = zeros(size(label));
+for i = 1:numel(u)
+    mapped(label == u(i)) = i;
+end
+
+label = mapped;
+labelMap = struct();
+labelMap.originalLabels = u(:);
+labelMap.mappedLabels = (1:numel(u))';
+labelMap.changed = ~isequal(labelMap.originalLabels, labelMap.mappedLabels);
+end
+
+function labelMap = build_identity_label_map(label)
+u = unique(label);
+labelMap = struct();
+labelMap.originalLabels = u(:);
+labelMap.mappedLabels = u(:);
+labelMap.changed = false;
 end
